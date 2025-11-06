@@ -1,0 +1,221 @@
+-- 1️⃣ Tabela: CIDADES
+
+CREATE TABLE cidades (
+    id_cidade INT PRIMARY KEY AUTO_INCREMENT,
+    nome VARCHAR(50) NOT NULL,
+    estado CHAR(2) NOT NULL
+);
+
+
+-- 2️⃣ Tabela: ENDEREÇOS
+
+CREATE TABLE enderecos (
+    id_endereco INT PRIMARY KEY AUTO_INCREMENT,
+    rua VARCHAR(100) NOT NULL,
+    numero VARCHAR(10) NOT NULL,
+    bairro VARCHAR(50) NOT NULL,
+    cep VARCHAR(9) NOT NULL,
+    id_cidade INT NOT NULL,
+    FOREIGN KEY (id_cidade)
+        REFERENCES cidades(id_cidade)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
+
+-- 3️⃣ Tabela: DOADORES
+
+CREATE TABLE doadores (
+    id_doador INT PRIMARY KEY AUTO_INCREMENT,
+    nome VARCHAR(100) NOT NULL,
+    cpf VARCHAR(14) UNIQUE NOT NULL,
+    email VARCHAR(100) UNIQUE,
+    telefone VARCHAR(20),
+    id_endereco INT,
+    FOREIGN KEY (id_endereco)
+        REFERENCES enderecos(id_endereco)
+        ON DELETE SET NULL
+        ON UPDATE CASCADE
+);
+
+-- 4️⃣ Tabela: INSTITUIÇÕES
+CREATE TABLE instituicoes (
+    id_instituicao INT PRIMARY KEY AUTO_INCREMENT,
+    nome VARCHAR(100) NOT NULL,
+    cnpj VARCHAR(18) UNIQUE NOT NULL,
+    email VARCHAR(100),
+    telefone VARCHAR(20),
+    id_endereco INT,
+    FOREIGN KEY (id_endereco)
+        REFERENCES enderecos(id_endereco)
+        ON DELETE SET NULL
+        ON UPDATE CASCADE
+);
+
+-- 5️⃣ Tabela: CAMPANHAS
+
+CREATE TABLE campanhas (
+    id_campanha INT PRIMARY KEY AUTO_INCREMENT,
+    nome VARCHAR(100) NOT NULL,
+    descricao TEXT,
+    data_inicio DATE NOT NULL,
+    data_fim DATE
+);
+
+-- 6️⃣ Tabela: TIPOS DE DOAÇÃO
+
+CREATE TABLE tipos_doacao (
+    id_tipo INT PRIMARY KEY AUTO_INCREMENT,
+    descricao VARCHAR(50) NOT NULL
+);
+
+-- 7️⃣ Tabela: ESTOQUE
+
+CREATE TABLE estoque (
+    id_estoque INT PRIMARY KEY AUTO_INCREMENT,
+    id_tipo INT NOT NULL,
+    quantidade_total INT DEFAULT 0 CHECK (quantidade_total >= 0),
+    FOREIGN KEY (id_tipo)
+        REFERENCES tipos_doacao(id_tipo)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
+
+-- 8️⃣ Tabela: MOVIMENTAÇÕES DE ESTOQUE
+
+CREATE TABLE movimentacoes_estoque (
+    id_movimentacao INT PRIMARY KEY AUTO_INCREMENT,
+    id_estoque INT NOT NULL,
+    tipo_movimentacao ENUM('entrada', 'saida') NOT NULL,
+    quantidade INT NOT NULL CHECK (quantidade > 0),
+    data_movimentacao DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_estoque)
+        REFERENCES estoque(id_estoque)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
+
+-- 9️⃣ Tabela: VOLUNTÁRIOS
+
+CREATE TABLE voluntarios (
+    id_voluntario INT PRIMARY KEY AUTO_INCREMENT,
+    nome VARCHAR(100) NOT NULL,
+    cpf VARCHAR(14) UNIQUE NOT NULL,
+    email VARCHAR(100) UNIQUE,
+    telefone VARCHAR(20)
+);
+
+-- 🔟 Tabela: PARTICIPAÇÕES (associação entre voluntários e campanhas)
+
+CREATE TABLE participacoes (
+    id_participacao INT PRIMARY KEY AUTO_INCREMENT,
+    id_voluntario INT NOT NULL,
+    id_campanha INT NOT NULL,
+    FOREIGN KEY (id_voluntario)
+        REFERENCES voluntarios(id_voluntario)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    FOREIGN KEY (id_campanha)
+        REFERENCES campanhas(id_campanha)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
+
+-- 1️⃣1️⃣ Tabela: DOAÇÕES
+
+CREATE TABLE doacoes (
+    id_doacao INT PRIMARY KEY AUTO_INCREMENT,
+    id_doador INT NOT NULL,
+    id_instituicao INT NOT NULL,
+    id_tipo INT NOT NULL,
+    quantidade INT NOT NULL CHECK (quantidade > 0),
+    data_doacao DATE NOT NULL,
+    id_campanha INT,
+    FOREIGN KEY (id_doador)
+        REFERENCES doadores(id_doador)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    FOREIGN KEY (id_instituicao)
+        REFERENCES instituicoes(id_instituicao)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    FOREIGN KEY (id_tipo)
+        REFERENCES tipos_doacao(id_tipo)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    FOREIGN KEY (id_campanha)
+        REFERENCES campanhas(id_campanha)
+        ON DELETE SET NULL
+        ON UPDATE CASCADE
+);
+
+-- 1️⃣2️⃣ Tabela: CATEGORIAS
+
+CREATE TABLE categorias (
+    id_categoria INT PRIMARY KEY AUTO_INCREMENT,
+    nome_categoria VARCHAR(50) UNIQUE NOT NULL
+);
+
+-- 1️⃣3️⃣ Tabela: COLETAS
+
+CREATE TABLE coletas (
+    id_coleta INT PRIMARY KEY AUTO_INCREMENT,
+    id_doador INT NOT NULL,
+    data_coleta DATE NOT NULL,
+    responsavel VARCHAR(100) NOT NULL,
+    observacoes TEXT,
+    FOREIGN KEY (id_doador)
+        REFERENCES doadores(id_doador)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
+
+-- 1️⃣4️⃣ Tabela: ALIMENTOS
+
+CREATE TABLE alimentos (
+    id_alimento INT PRIMARY KEY AUTO_INCREMENT,
+    nome VARCHAR(100) NOT NULL,
+    id_categoria INT NOT NULL,
+    validade DATE,
+    quantidade DECIMAL(10,2) NOT NULL CHECK (quantidade >= 0),
+    unidade_medida VARCHAR(20) NOT NULL,
+    id_coleta INT,
+    FOREIGN KEY (id_categoria)
+        REFERENCES categorias(id_categoria)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    FOREIGN KEY (id_coleta)
+        REFERENCES coletas(id_coleta)
+        ON DELETE SET NULL
+        ON UPDATE CASCADE
+);
+
+-- 1️⃣5️⃣ Tabela: DISTRIBUIÇÕES
+
+CREATE TABLE distribuicoes (
+    id_distribuicao INT PRIMARY KEY AUTO_INCREMENT,
+    id_instituicao INT NOT NULL,
+    data_distribuicao DATE NOT NULL,
+    responsavel VARCHAR(100) NOT NULL,
+    observacoes TEXT,
+    FOREIGN KEY (id_instituicao)
+        REFERENCES instituicoes(id_instituicao)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
+
+-- 1️⃣6️⃣ Tabela: ITENS DISTRIBUÍDOS
+
+CREATE TABLE itens_distribuidos (
+    id_item_distribuido INT PRIMARY KEY AUTO_INCREMENT,
+    id_distribuicao INT NOT NULL,
+    id_alimento INT NOT NULL,
+    quantidade DECIMAL(10,2) NOT NULL CHECK (quantidade > 0),
+    FOREIGN KEY (id_distribuicao)
+        REFERENCES distribuicoes(id_distribuicao)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    FOREIGN KEY (id_alimento)
+        REFERENCES alimentos(id_alimento)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
